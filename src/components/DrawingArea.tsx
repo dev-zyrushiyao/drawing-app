@@ -16,14 +16,14 @@ export default function DrawingArea() {
     //client X - rect calculates the space between the Browser and the element to ensure getting the correct coordinates when performed a click
     // /rect.width and height converts the coordinates from pixel to percentage
     // multiply 500 , converts ratio to SVG units (view port)
-    const x = Math.round(((e.clientX - rect.left) / rect.width) * 500);
-    const y = Math.round(((e.clientY - rect.top) / rect.height) * 500);
+    const xAxis = Math.round(((e.clientX - rect.left) / rect.width) * 500);
+    const yAxis = Math.round(((e.clientY - rect.top) / rect.height) * 500);
 
     const userLine = document.querySelector(".user-line");
     const currentPoint = userLine?.getAttribute("points");
 
     if (firstClick) {
-      userLine?.setAttribute("points", `${x} , ${y}`);
+      userLine?.setAttribute("points", `${xAxis} , ${yAxis}`);
       setFirstClick(false);
 
       const svg = document.querySelector("svg");
@@ -31,13 +31,14 @@ export default function DrawingArea() {
         "http://www.w3.org/2000/svg",
         "circle",
       );
-      circle.setAttribute("cx", `${x}`);
-      circle.setAttribute("cy", `${y}`);
+      circle.setAttribute("cx", `${xAxis}`);
+      circle.setAttribute("cy", `${yAxis}`);
       circle.setAttribute("r", `${10}`);
       circle.setAttribute("fill", "red");
       circle.setAttribute("class", "dot");
       svg?.append(circle);
 
+      //animate the new circle for first click guide
       gsap.from(".dot", {
         duration: 1,
         ease: "back",
@@ -46,13 +47,36 @@ export default function DrawingArea() {
       });
     } else {
       setFirstClick(false);
+
+      //undo the first click guide
       gsap.to(".dot", {
         duration: 1,
         ease: "power1",
         scale: 0,
         transformOrigin: "50% 50%",
       });
-      userLine?.setAttribute("points", `${currentPoint} ${x} , ${y}`);
+
+      userLine?.setAttribute("points", `${currentPoint} ${xAxis} , ${yAxis}`);
+      const userCirlce = document.querySelector(".user-circle");
+      userCirlce?.setAttribute("transformBox", "fill-box");
+
+      gsap.set(".user-circle", {
+        attr: { cx: xAxis, cy: yAxis },
+        clearProps: "transform",
+        opacity: 1,
+      });
+
+      // 2. Animate cleanly from the true center
+      gsap.fromTo(
+        ".user-circle",
+        { scale: 0, transformOrigin: "center center" },
+        {
+          scale: 1,
+          repeat: 1,
+          yoyo: true,
+          duration: 0.3,
+        },
+      );
     }
   });
 
@@ -226,6 +250,15 @@ export default function DrawingArea() {
             strokeWidth: 15,
           }}
           points="0 , 0"
+        />
+        <circle
+          className="user-circle"
+          opacity={0}
+          cx={0}
+          cy={0}
+          r={10}
+          fill="orange"
+          style={{ transform: "scale(0)" }}
         />
       </svg>
       <button
